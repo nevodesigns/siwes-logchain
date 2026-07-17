@@ -25,24 +25,35 @@ export default function Supervisor() {
   const [students, setStudents] = useState([]) // { address, profile, entries }
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [tx, setTx] = useState(null)
   const [approving, setApproving] = useState(null) // entry index in flight
 
   const refresh = useCallback(async () => {
     if (!account) return
     setLoading(true)
+    setLoadError('')
     try {
       const contract = getReadContract()
       const addresses = await contract.getSupervisorStudents(account)
-      const rows = await Promise.all(
-        addresses.map(async (address) => ({
-          address,
-          profile: await contract.students(address),
-          entries: await contract.getEntries(address),
-        })),
-      )
+      // fetch in small batches: anyone can register naming any supervisor,
+      // so this list is unbounded and a single burst of N*2 RPC calls
+      // would wedge the page if someone spams it
+      const rows = []
+      for (let i = 0; i < addresses.length; i += 10) {
+        const batch = await Promise.all(
+          addresses.slice(i, i + 10).map(async (address) => ({
+            address,
+            profile: await contract.students(address),
+            entries: await contract.getEntries(address),
+          })),
+        )
+        rows.push(...batch)
+      }
       setStudents(rows)
       setSelected((prev) => prev ?? rows[0]?.address ?? null)
+    } catch {
+      setLoadError('Could not load your students from the network.')
     } finally {
       setLoading(false)
     }
@@ -83,13 +94,32 @@ export default function Supervisor() {
           </p>
         </div>
         <div className="connect-box">
-          <p className="muted">
-            Connect the wallet your students registered as their supervisor.
-          </p>
-          <button className="btn" onClick={connect} disabled={connecting}>
-            {connecting ? 'CONNECTING…' : 'CONNECT METAMASK'}
-          </button>
-          {walletError && <p className="error-note">{walletError}</p>}
+          {typeof window.ethereum === 'undefined' ? (
+            <>
+              <p className="muted">
+                MetaMask is required to approve entries. Install it, then
+                reload this page.
+              </p>
+              <a
+                className="btn"
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                INSTALL METAMASK
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="muted">
+                Connect the wallet your students registered as their supervisor.
+              </p>
+              <button className="btn" onClick={connect} disabled={connecting}>
+                {connecting ? 'CONNECTING…' : 'CONNECT METAMASK'}
+              </button>
+              {walletError && <p className="error-note">{walletError}</p>}
+            </>
+          )}
         </div>
       </div>
     )
@@ -112,7 +142,14 @@ export default function Supervisor() {
 
       <TxBanner tx={tx} />
 
-      {loading && students.length === 0 ? (
+      {loadError ? (
+        <div className="connect-box">
+          <p className="error-note">{loadError}</p>
+          <button className="btn" onClick={refresh} disabled={loading}>
+            {loading ? 'RETRYING…' : 'RETRY'}
+          </button>
+        </div>
+      ) : loading && students.length === 0 ? (
         <p className="muted">Loading your students from the contract…</p>
       ) : students.length === 0 ? (
         <div className="empty-state">

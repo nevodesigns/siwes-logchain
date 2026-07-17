@@ -10,6 +10,7 @@ import { useWallet } from '../hooks/useWallet'
 import StatusBadge from '../components/StatusBadge'
 import TxBanner from '../components/TxBanner'
 import { formatDate, shortHash } from '../lib/contract'
+import { saveLogText, getLogText } from '../lib/localLog'
 
 function friendlyTxError(err) {
   if (err.code === 4001 || err.code === 'ACTION_REJECTED') {
@@ -26,6 +27,7 @@ export default function Student() {
   const [profile, setProfile] = useState(null)
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [tx, setTx] = useState(null)
 
   // registration form
@@ -47,11 +49,14 @@ export default function Student() {
   const refresh = useCallback(async () => {
     if (!account) return
     setLoading(true)
+    setLoadError('')
     try {
       const contract = getReadContract()
       const p = await contract.students(account)
       setProfile(p)
       setEntries(p.registered ? await contract.getEntries(account) : [])
+    } catch {
+      setLoadError('Could not load your profile from the network.')
     } finally {
       setLoading(false)
     }
@@ -103,6 +108,9 @@ export default function Student() {
     }
     try {
       setTx({ status: 'pending' })
+      // keep the raw text on this device before sending: onchain there is
+      // only the hash, so this browser copy is the student's own record
+      saveLogText(account, logHash, logText, weekLabel.trim())
       const contract = getWriteContract(signer)
       const sent = await sendWithTightGas(contract, 'submitEntry', [
         logHash,
@@ -130,22 +138,50 @@ export default function Student() {
           </p>
         </div>
         <div className="connect-box">
-          <p className="muted">
-            Connect the wallet you use for your SIWES logbook.
-          </p>
-          <button className="btn" onClick={connect} disabled={connecting}>
-            {connecting ? 'CONNECTING…' : 'CONNECT METAMASK'}
-          </button>
-          {walletError && <p className="error-note">{walletError}</p>}
+          {typeof window.ethereum === 'undefined' ? (
+            <>
+              <p className="muted">
+                MetaMask is required to submit log entries. Install it, then
+                reload this page.
+              </p>
+              <a
+                className="btn"
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                INSTALL METAMASK
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="muted">
+                Connect the wallet you use for your SIWES logbook.
+              </p>
+              <button className="btn" onClick={connect} disabled={connecting}>
+                {connecting ? 'CONNECTING…' : 'CONNECT METAMASK'}
+              </button>
+              {walletError && <p className="error-note">{walletError}</p>}
+            </>
+          )}
         </div>
       </div>
     )
   }
 
-  if (loading && !profile) {
+  if (!profile) {
     return (
       <div className="page">
-        <p className="muted">Loading your profile from the contract…</p>
+        {loadError ? (
+          <div className="connect-box">
+            <p className="error-note">{loadError}</p>
+            <button className="btn" onClick={refresh} disabled={loading}>
+              {loading ? 'RETRYING…' : 'RETRY'}
+            </button>
+          </div>
+        ) : (
+          <p className="muted">Loading your profile from the contract…</p>
+        )}
       </div>
     )
   }
@@ -255,6 +291,10 @@ export default function Student() {
               {logHash}
             </div>
           )}
+          <p className="muted" style={{ fontSize: 11.5 }}>
+            Only the hash goes onchain. A copy of your text is kept in this
+            browser so you can re-read it, it exists only on this device.
+          </p>
           {formError && <p className="error-note">{formError}</p>}
           <TxBanner tx={tx} />
           <button className="btn" type="submit" disabled={tx?.status === 'pending'}>
@@ -272,19 +312,28 @@ export default function Student() {
             </p>
           ) : (
             <ul className="entry-list scroll-area">
-              {[...entries].map((entry, i) => ({ entry, i })).reverse().map(({ entry, i }) => (
-                <li key={i}>
-                  <div className="grow">
-                    <div className="entry-label" style={{ fontWeight: 600, fontSize: 13.5 }}>
-                      {entry.weekLabel || `Entry ${i + 1}`}
+              {[...entries].map((entry, i) => ({ entry, i })).reverse().map(({ entry, i }) => {
+                const local = getLogText(account, entry.contentHash)
+                return (
+                  <li key={i}>
+                    <div className="grow">
+                      <div className="entry-label" style={{ fontWeight: 600, fontSize: 13.5 }}>
+                        {entry.weekLabel || `Entry ${i + 1}`}
+                      </div>
+                      <div className="entry-date mono muted" style={{ fontSize: 11 }}>
+                        {formatDate(entry.timestamp)} · {shortHash(entry.contentHash)}
+                      </div>
+                      {local && (
+                        <details className="local-text">
+                          <summary>Read entry (saved on this device)</summary>
+                          <p>{local.text}</p>
+                        </details>
+                      )}
                     </div>
-                    <div className="entry-date mono muted" style={{ fontSize: 11 }}>
-                      {formatDate(entry.timestamp)} · {shortHash(entry.contentHash)}
-                    </div>
-                  </div>
-                  <StatusBadge approved={entry.approved} />
-                </li>
-              ))}
+                    <StatusBadge approved={entry.approved} />
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>
