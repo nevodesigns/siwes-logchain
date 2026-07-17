@@ -4,6 +4,8 @@ A tamper-proof onchain logbook for SIWES (Students Industrial Work Experience Sc
 
 Students submit daily log entries as keccak256 hashes, supervisors approve them onchain, and institutions can verify any student's complete training record publicly, without an account or a wallet.
 
+**Live app:** https://siwes-logchain.pxxl.run
+
 ## The problem
 
 Every Nigerian engineering and science student goes through SIWES industrial training with a paper logbook. Those logbooks get lost, pages get disputed, and entries get backdated the night before submission. When an institution wants to confirm that a student actually did the work, there is nothing to check against.
@@ -14,6 +16,14 @@ Every Nigerian engineering and science student goes through SIWES industrial tra
 - Their assigned supervisor approves each entry from their own wallet. An approval is a permanent onchain attestation that cannot be revoked or edited.
 - Anyone with the student's wallet address can pull up the full record on the verify page and confirm every entry, its timestamp, and its approval status. Records cannot be backdated, edited, or lost.
 
+## Try it now
+
+Open the verify page with a seeded demo record:
+
+https://siwes-logchain.pxxl.run/?address=0x8F6D39D6ff1abb8DECAFf3ba5FCEC4eD213c437d
+
+No wallet, no account. The record loads directly from the Monad blockchain.
+
 ## Contract
 
 | | |
@@ -21,9 +31,11 @@ Every Nigerian engineering and science student goes through SIWES industrial tra
 | Network | Monad Testnet (chain ID 10143) |
 | Contract | `0x41b276b87264f9a58cAae09163d91e88F731A78B` |
 | Explorer | [testnet.monadexplorer.com](https://testnet.monadexplorer.com/address/0x41b276b87264f9a58cAae09163d91e88F731A78B) |
+| MonadVision | [testnet.monadvision.com](https://testnet.monadvision.com/address/0x41b276b87264f9a58cAae09163d91e88F731A78B) |
+| Monadscan | [testnet.monadscan.com](https://testnet.monadscan.com/address/0x41b276b87264f9a58cAae09163d91e88F731A78B) |
 | Source | [contracts/SIWESLog.sol](contracts/SIWESLog.sol) |
 
-The contract is verified on the Monad explorers (MonadVision, Monadscan).
+The contract is verified on MonadVision and Monadscan via the Monskills verification API.
 
 ## How it works
 
@@ -56,22 +68,17 @@ npm install
 PRIVATE_KEY=<deployer key> npx hardhat run scripts/deploy.js --network monadTestnet
 ```
 
-## Deploying to Vercel
+## Deploying to Pxxl
 
-The app is a static Vite build, ready for Vercel:
-
-1. Import this repo at [vercel.com/new](https://vercel.com/new)
-2. Set **Root Directory** to `frontend` (framework preset: Vite)
+1. Create a new project at [pxxl.app](https://pxxl.app) and connect the repo
+2. In Additional Build Settings, set:
+   - **Root Directory:** `frontend`
+   - **Install Command:** `npm install`
+   - **Build Command:** `npm run build`
+   - **Start Command:** `npx serve -s dist -l $PORT`
 3. Deploy. No environment variables are needed, the contract address ships in `constants.js`
 
-`frontend/vercel.json` already contains the SPA rewrite so `/student` and `/supervisor` resolve on refresh.
-
-Or from the CLI:
-
-```bash
-cd frontend
-npx vercel --prod
-```
+The `-s` flag on serve handles SPA routing so `/student` and `/supervisor` resolve correctly on direct load.
 
 ## Stack
 
