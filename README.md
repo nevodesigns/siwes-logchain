@@ -56,6 +56,23 @@ npm install
 PRIVATE_KEY=<deployer key> npx hardhat run scripts/deploy.js --network monadTestnet
 ```
 
+## Deploying to Vercel
+
+The app is a static Vite build, ready for Vercel:
+
+1. Import this repo at [vercel.com/new](https://vercel.com/new)
+2. Set **Root Directory** to `frontend` (framework preset: Vite)
+3. Deploy. No environment variables are needed, the contract address ships in `constants.js`
+
+`frontend/vercel.json` already contains the SPA rewrite so `/student` and `/supervisor` resolve on refresh.
+
+Or from the CLI:
+
+```bash
+cd frontend
+npx vercel --prod
+```
+
 ## Stack
 
 - Solidity 0.8.20, Hardhat, Monad Testnet
