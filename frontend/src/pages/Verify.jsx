@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { isAddress } from 'ethers'
 import {
   getReadContract,
@@ -10,14 +11,13 @@ import { CONTRACT_ADDRESS } from '../constants'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Verify() {
-  const [address, setAddress] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [address, setAddress] = useState(searchParams.get('address') || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [record, setRecord] = useState(null)
 
-  async function lookup(e) {
-    e.preventDefault()
-    const target = address.trim()
+  async function runLookup(target) {
     if (!isAddress(target)) {
       setError('That does not look like a valid wallet address')
       return
@@ -34,11 +34,25 @@ export default function Verify() {
       }
       const entries = await contract.getEntries(target)
       setRecord({ address: target, profile, entries })
+      // keep the address in the URL so the record is shareable as a link
+      setSearchParams({ address: target }, { replace: true })
     } catch {
       setError('Could not reach the contract. Check your connection and try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  // support shareable links like /?address=0x...
+  useEffect(() => {
+    const fromUrl = searchParams.get('address')
+    if (fromUrl) runLookup(fromUrl.trim())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function lookup(e) {
+    e.preventDefault()
+    runLookup(address.trim())
   }
 
   const approvedCount = record
