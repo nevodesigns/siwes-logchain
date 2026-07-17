@@ -419,6 +419,15 @@ a:hover {
   padding: 10px 0;
 }
 
+.self-flag {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  background: var(--orange-dim);
+  padding: 8px 12px;
+}
+
 .cert-stats {
   display: flex;
   gap: 26px;
@@ -534,6 +543,25 @@ a:hover {
 .entry-list .grow {
   flex: 1;
   min-width: 0;
+}
+
+.local-text {
+  margin-top: 4px;
+}
+
+.local-text summary {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.local-text p {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 6px 0 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .student-list {

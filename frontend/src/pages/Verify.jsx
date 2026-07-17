@@ -59,6 +59,12 @@ export default function Verify() {
     ? record.entries.filter((entry) => entry.approved).length
     : 0
 
+  // the contract cannot stop a student naming their own wallet as
+  // supervisor, so surface it loudly to the institution viewing the record
+  const selfSupervised =
+    record &&
+    record.profile.supervisor.toLowerCase() === record.address.toLowerCase()
+
   return (
     <div className="page">
       <div>
@@ -122,6 +128,14 @@ export default function Verify() {
             </span>
             <span>SUPERVISOR {record.profile.supervisor}</span>
           </div>
+
+          {selfSupervised && (
+            <p className="self-flag">
+              WARNING: this record is self-supervised. The supervisor wallet is
+              the same as the student wallet, so the approvals below were made
+              by the student themselves.
+            </p>
+          )}
 
           <div className="cert-stats">
             <div className="stat">
