@@ -7,7 +7,8 @@ import {
   shortHash,
   formatDate,
 } from '../lib/contract'
-import { CONTRACT_ADDRESS } from '../constants'
+import { CONTRACT_ADDRESS, APP_URL } from '../constants'
+import { QRCodeSVG } from 'qrcode.react'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Verify() {
@@ -202,6 +203,19 @@ export default function Verify() {
             </a>{' '}
             on Monad Testnet · chain ID 10143
           </footer>
+
+          <div className="cert-bottom">
+            <div className="qr-block">
+              <QRCodeSVG
+                value={`${APP_URL}/?address=${record.address}`}
+                size={120}
+                fgColor="#ADFF2F"
+                bgColor="transparent"
+                marginSize={0}
+              />
+              <p className="qr-label">Scan to verify this record</p>
+            </div>
+          </div>
         </section>
       )}
     </div>

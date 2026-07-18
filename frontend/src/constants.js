@@ -4,6 +4,7 @@ export const CHAIN_ID = 10143;
 export const CHAIN_ID_HEX = "0x279f";
 export const RPC_URL = "https://testnet-rpc.monad.xyz";
 export const EXPLORER_URL = "https://testnet.monadexplorer.com";
+export const APP_URL = "https://siwes-logchain.pxxl.run";
 
 export const CONTRACT_ABI = [
   "function register(string name, string matricNumber, string institution, address supervisor)",
