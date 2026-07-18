@@ -89,7 +89,25 @@ export default function Verify() {
 
       {error && <p className="error-note">{error}</p>}
 
-      {!record && !error && (
+      {loading && (
+        <section className="certificate" aria-hidden="true">
+          <div className="cert-head">
+            <div>
+              <p className="cert-label">Official SIWES Training Record</p>
+              <div className="skeleton" style={{ width: 200, height: 28 }} />
+              <div className="skeleton" style={{ width: 120, height: 16, marginTop: 8 }} />
+              <div className="skeleton" style={{ width: 160, height: 14, marginTop: 6 }} />
+            </div>
+          </div>
+          <div className="skeleton-rows">
+            <div className="skeleton" style={{ width: '100%', height: 12 }} />
+            <div className="skeleton" style={{ width: '100%', height: 12 }} />
+            <div className="skeleton" style={{ width: '100%', height: 12 }} />
+          </div>
+        </section>
+      )}
+
+      {!record && !error && !loading && (
         <div className="empty-state">
           <p className="big">AWAITING LOOKUP</p>
           <p>
