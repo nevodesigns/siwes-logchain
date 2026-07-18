@@ -10,6 +10,7 @@ import {
 import { CONTRACT_ADDRESS, APP_URL } from '../constants'
 import { QRCodeSVG } from 'qrcode.react'
 import StatusBadge from '../components/StatusBadge'
+import InstallPrompt from '../components/InstallPrompt'
 
 export default function Verify() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -249,6 +250,8 @@ export default function Verify() {
           </div>
         </section>
       )}
+
+      <InstallPrompt />
     </div>
   )
 }

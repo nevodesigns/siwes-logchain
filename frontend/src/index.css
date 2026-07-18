@@ -701,6 +701,27 @@ a:hover {
   font-weight: 500;
 }
 
+.install-banner {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  max-width: calc(100vw - 28px);
+}
+
+.install-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 760px) {
