@@ -17,6 +17,20 @@ export default function Verify() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [record, setRecord] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const [manualCopyUrl, setManualCopyUrl] = useState('')
+
+  async function copyShareLink() {
+    const url = `${APP_URL}/?address=${record.address}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard api unavailable (http, older browsers): show the url for manual copy
+      setManualCopyUrl(url)
+    }
+  }
 
   async function runLookup(target) {
     if (!isAddress(target)) {
@@ -214,6 +228,23 @@ export default function Verify() {
                 marginSize={0}
               />
               <p className="qr-label">Scan to verify this record</p>
+            </div>
+            <div className="cert-actions" data-html2canvas-ignore="true">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={copyShareLink}
+              >
+                {copied ? 'Link copied!' : 'Copy shareable link'}
+              </button>
+              {manualCopyUrl && (
+                <input
+                  className="manual-copy mono"
+                  readOnly
+                  value={manualCopyUrl}
+                  onFocus={(e) => e.target.select()}
+                />
+              )}
             </div>
           </div>
         </section>
