@@ -323,10 +323,21 @@ export default function Student() {
                       <div className="entry-date mono muted" style={{ fontSize: 11 }}>
                         {formatDate(entry.timestamp)} · {shortHash(entry.contentHash)}
                       </div>
-                      {local && (
+                      {local ? (
                         <details className="local-text">
                           <summary>Read entry (saved on this device)</summary>
                           <p>{local.text}</p>
+                        </details>
+                      ) : (
+                        <details className="local-text">
+                          <summary title="This entry was submitted from another device. Only the hash is stored onchain. The original text is on the device that submitted it.">
+                            ⓘ Hash only on this device
+                          </summary>
+                          <p>
+                            This entry was submitted from another device. Only
+                            the hash is stored onchain. The original text is on
+                            the device that submitted it.
+                          </p>
                         </details>
                       )}
                     </div>
