@@ -365,6 +365,19 @@ a:hover {
   gap: 16px;
 }
 
+/* the text column must be allowed to shrink and wrap, otherwise a long
+   unbroken profile string (name/matric/institution come from arbitrary
+   onchain input) blows out the certificate width, especially on mobile */
+.cert-head > div:first-child {
+  min-width: 0;
+}
+
+.cert-name,
+.cert-matric,
+.cert-inst {
+  overflow-wrap: anywhere;
+}
+
 .cert-label {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -417,6 +430,7 @@ a:hover {
   border-top: 1px dashed var(--border);
   border-bottom: 1px dashed var(--border);
   padding: 10px 0;
+  overflow-wrap: anywhere;
 }
 
 .self-flag {
@@ -462,7 +476,7 @@ a:hover {
 
 .timeline li {
   display: grid;
-  grid-template-columns: 150px 1fr auto;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
   padding: 9px 2px;
@@ -471,6 +485,10 @@ a:hover {
 
 .timeline li:last-child {
   border-bottom: none;
+}
+
+.entry-label {
+  overflow-wrap: anywhere;
 }
 
 .entry-when .entry-label {
@@ -644,6 +662,13 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+}
+
+/* names and matric numbers are arbitrary onchain strings, wrap them so a
+   long value cannot stretch the roster row */
+.student-list button > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .student-list button:hover {
