@@ -8,7 +8,7 @@ import {
   formatDate,
 } from '../lib/contract'
 import { CONTRACT_ADDRESS, APP_URL } from '../constants'
-import { QRCodeSVG } from 'qrcode.react'
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react'
 import StatusBadge from '../components/StatusBadge'
 import InstallPrompt from '../components/InstallPrompt'
 
@@ -22,61 +22,21 @@ export default function Verify() {
   const [manualCopyUrl, setManualCopyUrl] = useState('')
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
-  const certRef = useRef(null)
+  // hidden black-on-white QR, captured into the PDF (the on-screen QR is neon
+  // on transparent, which does not print or scan reliably on paper)
+  const pdfQrRef = useRef(null)
 
   async function exportPdf() {
     if (!record || exporting) return
     setExporting(true)
     setExportError('')
     try {
-      // both libraries are heavy, load them only when someone exports
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ])
-      const canvas = await html2canvas(certRef.current, {
-        backgroundColor: '#131313',
-        scale: 2,
-        useCORS: true,
-        onclone: (doc) => {
-          // the timeline scrolls in the app, but the pdf must show every
-          // entry, so the clone gets its height constraints removed
-          const cert = doc.querySelector('.certificate')
-          if (cert) {
-            cert.style.height = 'auto'
-            cert.style.flex = 'none'
-            cert.style.margin = '0'
-            cert.style.outline = 'none'
-          }
-          doc.querySelectorAll('.certificate .scroll-area').forEach((el) => {
-            el.style.overflow = 'visible'
-          })
-        },
-      })
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 10
-      const contentHeight = pageHeight - margin * 2
-      const imgWidth = pageWidth - margin * 2
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const img = canvas.toDataURL('image/png')
-
-      let position = margin
-      let heightLeft = imgHeight
-      pdf.addImage(img, 'PNG', margin, position, imgWidth, imgHeight)
-      heightLeft -= contentHeight
-      while (heightLeft > 0) {
-        position -= contentHeight
-        pdf.addPage()
-        pdf.addImage(img, 'PNG', margin, position, imgWidth, imgHeight)
-        heightLeft -= contentHeight
-      }
-
-      const safe = (s) => s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
-      pdf.save(
-        `SIWES-${safe(record.profile.name)}-${safe(record.profile.matricNumber)}.pdf`,
-      )
+      // jspdf is heavy, load it only when someone actually exports
+      const { generateCertificatePdf } = await import('../lib/certificatePdf')
+      const qrDataUrl = pdfQrRef.current
+        ? pdfQrRef.current.toDataURL('image/png')
+        : null
+      generateCertificatePdf(record, qrDataUrl)
     } catch {
       setExportError('Could not generate the PDF. Try again.')
     } finally {
@@ -197,7 +157,7 @@ export default function Verify() {
       )}
 
       {record && (
-        <section className="certificate" ref={certRef}>
+        <section className="certificate">
           <div className="cert-head">
             <div>
               <p className="cert-label">Official SIWES Training Record</p>
@@ -293,7 +253,19 @@ export default function Verify() {
               />
               <p className="qr-label">Scan to verify this record</p>
             </div>
-            <div className="cert-actions" data-html2canvas-ignore="true">
+            {/* off-screen high-res QR captured into the PDF, black on white
+                with a quiet zone so it prints and scans reliably */}
+            <QRCodeCanvas
+              ref={pdfQrRef}
+              value={`${APP_URL}/?address=${record.address}`}
+              size={256}
+              fgColor="#000000"
+              bgColor="#ffffff"
+              marginSize={3}
+              style={{ position: 'absolute', left: '-9999px', top: 0 }}
+              aria-hidden="true"
+            />
+            <div className="cert-actions">
               <button
                 type="button"
                 className="btn"
