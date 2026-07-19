@@ -89,3 +89,23 @@ The `-s` flag on serve handles SPA routing so `/student` and `/supervisor` resol
 ## Why Monad
 
 400ms block times and 800ms finality mean a log entry or an approval confirms about as fast as the UI can show it, which matters when a supervisor is approving a whole week of entries in one sitting. Full EVM compatibility means the standard Solidity + ethers toolchain works unchanged. One thing to know as a developer: Monad charges gas on the gas limit rather than gas used, so the frontend estimates gas per transaction and adds only a 10 percent buffer instead of letting the wallet pick a padded default.
+
+## Open source
+
+This project is MIT licensed. Contributions are welcome.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+
+The contract is deployed and verified. If you want to build a different
+frontend or integrate SIWES LogChain into your institution's systems,
+the ABI is in [frontend/src/constants.js](frontend/src/constants.js).
+
+## Roadmap
+
+Features planned for future versions:
+
+- Bulk supervisor import (institutions onboard all students at once)
+- NYSC integration (same system, different training body)
+- Institution dashboard (verify all students from one wallet)
+- Mobile app (React Native)
+- Support for other Nigerian training programmes
