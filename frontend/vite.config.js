@@ -8,12 +8,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Inline the registration into index.html. Pxxl serves index.html fresh
-      // (no-cache) but immutable-caches every standalone .js including
-      // registerSW.js, which would otherwise stay frozen pointing at the old
-      // worker. Inlining guarantees the pointer to the new worker reaches
-      // every browser.
-      injectRegister: 'inline',
+      // We register the worker ourselves from an inline script in index.html
+      // (see index.html) so we can append a version query string. Pxxl's edge
+      // returned the SPA fallback for the bare /sw.v2.js path once and cached
+      // that HTML immutably, poisoning the bare URL. Cloudflare keys its cache
+      // by query string, so /sw.v2.js?v=N is a clean key that serves the real
+      // worker file. The plugin's own registration cannot add that query, so
+      // we disable it here.
+      injectRegister: false,
       // Pxxl serves .js files with a one year immutable cache and never purges
       // sw.js on deploy, so the old precache worker stayed frozen at the CDN
       // edge and kept old code alive on returning devices. Serving the worker
