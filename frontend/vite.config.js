@@ -8,6 +8,19 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Inline the registration into index.html. Pxxl serves index.html fresh
+      // (no-cache) but immutable-caches every standalone .js including
+      // registerSW.js, which would otherwise stay frozen pointing at the old
+      // worker. Inlining guarantees the pointer to the new worker reaches
+      // every browser.
+      injectRegister: 'inline',
+      // Pxxl serves .js files with a one year immutable cache and never purges
+      // sw.js on deploy, so the old precache worker stayed frozen at the CDN
+      // edge and kept old code alive on returning devices. Serving the worker
+      // under a fresh filename gets it past that frozen cache. It only ever
+      // needs bumping again if the worker logic itself changes, which is rare
+      // now that the worker is network first.
+      filename: 'sw.v2.js',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'SIWES LogChain',
