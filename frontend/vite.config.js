@@ -31,12 +31,29 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // app shell only: html, js, css and icons are precached for offline.
-        // contract reads are json-rpc POSTs to the monad rpc, the service
-        // worker never caches those, records must always be live
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
-        navigateFallback: '/index.html',
+        // Hashed assets are precached for offline use, but the HTML document is
+        // deliberately NOT precached. Navigations go network first so a
+        // returning user always gets the latest app when online, even if the
+        // service worker file itself is stale-cached by the host CDN (Pxxl
+        // serves sw.js immutable, which would otherwise pin users to old code).
+        // Contract reads are JSON-RPC POSTs to the Monad RPC, no route matches
+        // them so they are never cached, records are always live.
+        globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // always try the network for the app shell, fall back to cache only
+            // when offline so a new deploy is picked up on the next load
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-shell',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 12 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'StaleWhileRevalidate',
