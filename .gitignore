@@ -3,3 +3,5 @@ node_modules/
 artifacts/
 cache/
 dist/
+CLAUDE_CODE_BRIEF.md
+CLAUDE_CODE_QA_BRIEF.md
