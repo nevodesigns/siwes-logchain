@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { isAddress } from 'ethers'
 import {
@@ -20,6 +20,69 @@ export default function Verify() {
   const [record, setRecord] = useState(null)
   const [copied, setCopied] = useState(false)
   const [manualCopyUrl, setManualCopyUrl] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
+  const certRef = useRef(null)
+
+  async function exportPdf() {
+    if (!record || exporting) return
+    setExporting(true)
+    setExportError('')
+    try {
+      // both libraries are heavy, load them only when someone exports
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+      const canvas = await html2canvas(certRef.current, {
+        backgroundColor: '#131313',
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+          // the timeline scrolls in the app, but the pdf must show every
+          // entry, so the clone gets its height constraints removed
+          const cert = doc.querySelector('.certificate')
+          if (cert) {
+            cert.style.height = 'auto'
+            cert.style.flex = 'none'
+            cert.style.margin = '0'
+            cert.style.outline = 'none'
+          }
+          doc.querySelectorAll('.certificate .scroll-area').forEach((el) => {
+            el.style.overflow = 'visible'
+          })
+        },
+      })
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 10
+      const contentHeight = pageHeight - margin * 2
+      const imgWidth = pageWidth - margin * 2
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const img = canvas.toDataURL('image/png')
+
+      let position = margin
+      let heightLeft = imgHeight
+      pdf.addImage(img, 'PNG', margin, position, imgWidth, imgHeight)
+      heightLeft -= contentHeight
+      while (heightLeft > 0) {
+        position -= contentHeight
+        pdf.addPage()
+        pdf.addImage(img, 'PNG', margin, position, imgWidth, imgHeight)
+        heightLeft -= contentHeight
+      }
+
+      const safe = (s) => s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
+      pdf.save(
+        `SIWES-${safe(record.profile.name)}-${safe(record.profile.matricNumber)}.pdf`,
+      )
+    } catch {
+      setExportError('Could not generate the PDF. Try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function copyShareLink() {
     const url = `${APP_URL}/?address=${record.address}`
@@ -134,7 +197,7 @@ export default function Verify() {
       )}
 
       {record && (
-        <section className="certificate">
+        <section className="certificate" ref={certRef}>
           <div className="cert-head">
             <div>
               <p className="cert-label">Official SIWES Training Record</p>
@@ -233,11 +296,20 @@ export default function Verify() {
             <div className="cert-actions" data-html2canvas-ignore="true">
               <button
                 type="button"
+                className="btn"
+                onClick={exportPdf}
+                disabled={exporting}
+              >
+                {exporting ? 'Generating PDF...' : 'EXPORT CERTIFICATE AS PDF'}
+              </button>
+              <button
+                type="button"
                 className="btn btn-ghost"
                 onClick={copyShareLink}
               >
                 {copied ? 'Link copied!' : 'Copy shareable link'}
               </button>
+              {exportError && <p className="error-note">{exportError}</p>}
               {manualCopyUrl && (
                 <input
                   className="manual-copy mono"
